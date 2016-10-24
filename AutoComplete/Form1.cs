@@ -25,9 +25,138 @@ namespace AutoComplete
             InitializeComponent();
         }
 
+        public void compareFileByKey()
+        {
+            Dictionary<string, Dictionary<string, string>> FileA = new Dictionary<string, Dictionary<string, string>>();
+            Dictionary<string, Dictionary<string, string>> FileB = new Dictionary<string, Dictionary<string, string>>();
+
+            string strAutoCSV_New = string.Format(@"D:\workfile\AutoComplete\QA\10-22\ACNew\AutocompleteUniverse\29_index.csv");
+            string strAutoCSV_Old = string.Format(@"D:\workfile\AutoComplete\QA\10-22\ACOld\AutocompleteUniverse\29_index.csv");
+
+            string[] keyArray = new string[] { "rtSymbol", "rtExchangeId", "rtSecurityType" };
+            string[] ignoreArray = new string[] { "RecordId", "MarketCapital", "AverageVolume", "NetAssets" };
+            Dictionary<string, Dictionary<string, string>> AutoComplete_New = readFileByKey(strAutoCSV_New, keyArray, ignoreArray);
+            Dictionary<string, Dictionary<string, string>> AutoComplete_Old = readFileByKey(strAutoCSV_Old, keyArray, ignoreArray);
+
+            compareFileByKey(AutoComplete_New, AutoComplete_Old, @"D:\workfile\AutoComplete\QA\10-22\1111111.txt");
+            int a = 1;
+        }
+
+        #region 根据Key比对Dictionary并输出差异
+        public Dictionary<string, Dictionary<string, string>> compareFileByKey(Dictionary<string, Dictionary<string, string>> FileA,
+            Dictionary<string, Dictionary<string, string>> FileB,string filename) {
+            
+            Dictionary<string, Dictionary<string, string>> rtn = new Dictionary<string, Dictionary<string, string>>();
+            foreach (var raw in FileA) {
+                if (FileB.ContainsKey(raw.Key))
+                {
+                    if (FileA[raw.Key].Equals(FileB[raw.Key]))
+                    {
+                        Tool.LogFile(filename, "Success:" + raw.Key);
+                    }
+                    else {
+                        bool isSecondSame = true;
+                        string diff = string.Empty;
+                        foreach (var raw2 in FileA[raw.Key]) {
+                            if (FileA[raw.Key][raw2.Key].Equals(FileB[raw.Key][raw2.Key]))
+                            {
+                                isSecondSame = isSecondSame & true;
+                            }
+                            else {
+                                isSecondSame = isSecondSame & false;
+                                diff = diff + raw2.Key + "{FileA:[" + FileA[raw.Key][raw2.Key] + "], FileB:[" + FileB[raw.Key][raw2.Key] + "]};";
+                            }
+                        }
+                        if(isSecondSame){
+                             Tool.LogFile(filename, "Success:" + raw.Key);
+                        }else{
+                            Tool.LogFile(filename, "Fail:" + diff);
+                        }
+                    }
+                }
+                else {
+                    Tool.LogFile(filename, "仅仅在A中存在：" + raw.Key);
+                }
+            }
+            foreach (var raw in FileB)
+            {
+                if (!FileA.ContainsKey(raw.Key)) {
+                    Tool.LogFile(filename, "仅仅在B中存在：" + raw.Key);
+                }
+            }
+            return rtn;
+        }
+        #endregion
+
+        #region 根据Key读取文件至Dictionary
+        public Dictionary<string, Dictionary<string, string>> readFileByKey(string filePath, string[] keyArray,string[] ignoreArray)
+        {
+            Dictionary<string, Dictionary<string, string>> rtn = new Dictionary<string, Dictionary<string, string>>();
+            if (keyArray.Count() == 0)
+            {
+                return rtn;
+            }
+            string errorkey = "";
+            try
+            {
+                StreamReader sr = new StreamReader(filePath, Encoding.Default);
+                string[] template = sr.ReadLine().Split(','); 
+                string str = string.Empty;
+                while ((str = sr.ReadLine()) != null)
+                {
+                    Dictionary<string, string> subrtn = new Dictionary<string, string>();
+                    string key = string.Empty;
+                    string[] Data = str.Split(',');
+                    if (Data.Count() != template.Count())//若csv中间包含逗号
+                    {
+                        Data = str.Split('\"');
+                        for(int i = 1,len =Data.Count();i<len;i++ ){
+                            if (i%2 == 1)
+                            {
+                                if(keyArray.Contains(template[(i-1)/2].Replace("\"", ""))){
+                                    key = key + Data[i].Replace("\"", "") + "|";
+                                }
+                                subrtn.Add(template[(i - 1)/2].Replace("\"", ""), Data[(i)]);
+                            }
+                        }
+                    }else{
+                        for (int i = 0; i < template.Count(); i++)
+                        {
+                            if (keyArray.Contains(template[i].Replace("\"", "")))
+                            {
+                                key = key + Data[i].Replace("\"", "") + "|";
+                            }
+                            if (!ignoreArray.Contains(template[i].Replace("\"", "")))
+                            {
+                                subrtn.Add(template[i].Replace("\"", ""), Data[i]);
+                            }
+                        }
+                    }
+                    rtn.Add(key, subrtn);
+                }
+            }
+            catch (Exception e)
+            {
+                errorkey = errorkey+"1";
+                throw ;
+            }
+            return rtn;
+        }
+        //if (key == "|29|XI|")
+        //{
+        //    int a = 1;
+        //}
+        //errorkey = key;
+        #endregion
+
+        #region 校验SecType变化
+        #endregion 
+
         private void button1_Click(object sender, EventArgs e)
         {
-            Verify1022();
+
+            compareFileByKey();
+            //Verify1022();
            // string steRealTimeNewPath = string.Format(@"D:\workfile\AutoComplete\HistoricalData\RealTime\2016-06-10\MS-EUR-OTHER-SYMBOL-AC-LIST.txt");
            // string strRealTimeOldPath = string.Format(@"D:\workfile\AutoComplete\QA\6-4\MS-CANADA-SYMBOL-AC-LIST.txt");
 
