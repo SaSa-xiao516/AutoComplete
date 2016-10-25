@@ -15,6 +15,8 @@ using System.Configuration;
 using AutoComplete.Comm;
 using AutoComplete.ACChange;
 using System.Data.Common;
+using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace AutoComplete
 {
@@ -38,12 +40,26 @@ namespace AutoComplete
             Dictionary<string, Dictionary<string, string>> AutoComplete_New = readFileByKey(strAutoCSV_New, keyArray, ignoreArray);
             Dictionary<string, Dictionary<string, string>> AutoComplete_Old = readFileByKey(strAutoCSV_Old, keyArray, ignoreArray);
 
-            compareFileByKey(AutoComplete_New, AutoComplete_Old, @"D:\workfile\AutoComplete\QA\10-22\1111111.txt");
+            compareDictionaryByKey(AutoComplete_New, AutoComplete_Old, @"D:\workfile\AutoComplete\QA\10-22\1111111.txt");
             int a = 1;
         }
 
+        #region 根据Key比对File并输出差异(输入的Key包括："rtSymbol", "Symbol", "rtExchangeId", "ExchangeId", "rtSecurityType", "SecurityType", "CountryId", "ShareClassId" )
+        public void compareFileByKey(string filepath1, string filepath2,string resultfile)
+        {
+            //string[] keyArray = new string[] { "rtSymbol", "rtExchangeId", "rtSecurityType" };
+            string[] keyArray = new string[] { "rtSymbol", "Symbol", "rtExchangeId", "ExchangeId", "rtSecurityType", "SecurityType", "CountryId", "ShareClassId" };
+            string[] ignoreArray = new string[] { "RecordId", "MarketCapital", "AverageVolume", "NetAssets" };
+            Dictionary<string, Dictionary<string, string>> AutoComplete_New = readFileByKey(filepath1, keyArray, ignoreArray);
+            Dictionary<string, Dictionary<string, string>> AutoComplete_Old = readFileByKey(filepath2, keyArray, ignoreArray);
+
+            compareDictionaryByKey(AutoComplete_New, AutoComplete_Old, resultfile);
+
+        }
+        #endregion
+
         #region 根据Key比对Dictionary并输出差异
-        public Dictionary<string, Dictionary<string, string>> compareFileByKey(Dictionary<string, Dictionary<string, string>> FileA,
+        public Dictionary<string, Dictionary<string, string>> compareDictionaryByKey(Dictionary<string, Dictionary<string, string>> FileA,
             Dictionary<string, Dictionary<string, string>> FileB,string filename) {
             
             Dictionary<string, Dictionary<string, string>> rtn = new Dictionary<string, Dictionary<string, string>>();
@@ -52,7 +68,7 @@ namespace AutoComplete
                 {
                     if (FileA[raw.Key].Equals(FileB[raw.Key]))
                     {
-                        Tool.LogFile(filename, "Success:" + raw.Key);
+                        //Tool.LogFile(filename, "Success:" + raw.Key);
                     }
                     else {
                         bool isSecondSame = true;
@@ -68,7 +84,7 @@ namespace AutoComplete
                             }
                         }
                         if(isSecondSame){
-                             Tool.LogFile(filename, "Success:" + raw.Key);
+                             //Tool.LogFile(filename, "Success:" + raw.Key);
                         }else{
                             Tool.LogFile(filename, "Fail:" + diff);
                         }
@@ -106,31 +122,29 @@ namespace AutoComplete
                 {
                     Dictionary<string, string> subrtn = new Dictionary<string, string>();
                     string key = string.Empty;
-                    string[] Data = str.Split(',');
+                    string[] Data = Regex.Split(str, "\",\"", RegexOptions.IgnoreCase);   //正则 以","分割
                     if (Data.Count() != template.Count())//若csv中间包含逗号
-                    {
-                        Data = str.Split('\"');
-                        for(int i = 1,len =Data.Count();i<len;i++ ){
-                            if (i%2 == 1)
-                            {
-                                if(keyArray.Contains(template[(i-1)/2].Replace("\"", ""))){
-                                    key = key + Data[i].Replace("\"", "") + "|";
-                                }
-                                subrtn.Add(template[(i - 1)/2].Replace("\"", ""), Data[(i)]);
-                            }
-                        }
+                    {   
+                        MessageBox.Show("文件异常");
                     }else{
-                        for (int i = 0; i < template.Count(); i++)
+                        Data[0] = Data[0].Substring(1,Data[0].Length-1);
+                        Data[Data.Count()-1] = Data[Data.Count()-1].Substring(0, Data[Data.Count()-1].Length - 1);
+                    }
+                    
+                    for (int i = 0; i < template.Count(); i++)
+                    {
+                        if (keyArray.Contains(template[i].Replace("\"", "")))
                         {
-                            if (keyArray.Contains(template[i].Replace("\"", "")))
-                            {
-                                key = key + Data[i].Replace("\"", "") + "|";
-                            }
-                            if (!ignoreArray.Contains(template[i].Replace("\"", "")))
-                            {
-                                subrtn.Add(template[i].Replace("\"", ""), Data[i]);
-                            }
+                            key = key + Data[i] + "|";
                         }
+                        if (!ignoreArray.Contains(template[i].Replace("\"", "")))
+                        {
+                            subrtn.Add(template[i].Replace("\"", ""), Data[i]);
+                        }
+                    }
+                    errorkey = key;
+                    if (key == "") {
+                        int a = 1;
                     }
                     rtn.Add(key, subrtn);
                 }
@@ -150,12 +164,60 @@ namespace AutoComplete
         #endregion
 
         #region 校验SecType变化
+        //如果存在预期文件，则多一个RT和预期比较的步骤
+
         #endregion 
+
+
+        #region  按照文件夹多线程比对(屏蔽global_fund_list.csv)
+        public void MultiThreadCompare(string filepath1, string filepath2)
+        {
+            string resultfile = @"D:\workfile\AutoComplete\QA\10-22\22222.txt";
+            List<string> filelist1 = new List<string>();
+            List<string> filelist2 = new List<string>();
+            filelist1 = FindFileByType(filepath1, "*.csv");
+            filelist2 = FindFileByType(filepath2, "*.csv");
+            foreach (var file in filelist1) {
+                string temp = file.Substring(file.IndexOf(filepath1) + filepath1.Length, file.Length - filepath1.Length);
+                if (filelist2.Contains(filepath2 + temp) && temp != "global_fund_list.csv")
+                {
+                    compareFileByKey(filepath1 + temp, filepath2 + temp, resultfile);
+                }
+            }
+        }
+        #endregion 
+
+        #region 读取指定文件夹下的所有指定类型的文件
+        public List<string> FindFileByType(string dir,string fileType)                         
+        {
+            //在指定目录及子目录下查找文件,在listBox1中列出子目录及文件 
+            DirectoryInfo Dir = new DirectoryInfo(dir);
+            List<string> rtn = new List<string>();
+            try
+            {
+                foreach (DirectoryInfo d in Dir.GetDirectories())     //查找子目录   
+                {
+                    rtn.AddRange(FindFileByType(Dir + d.ToString() + "\\ ", fileType));
+                }
+                foreach (FileInfo f in Dir.GetFiles(fileType))             //查找文件 
+                {
+                    rtn.Add(Dir + f.ToString());
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+            return rtn;
+        } 
+        #endregion
 
         private void button1_Click(object sender, EventArgs e)
         {
-
-            compareFileByKey();
+            //FindFileByType(@"D:\workfile\AutoComplete\QA\10-22\ACOld\","*.csv");
+            MultiThreadCompare(@"D:\workfile\AutoComplete\QA\10-22\ACNew\AutocompleteUniverse\", 
+@"D:\workfile\AutoComplete\QA\10-22\ACOld\AutocompleteUniverse\");
+            //compareFileByKey();
             //Verify1022();
            // string steRealTimeNewPath = string.Format(@"D:\workfile\AutoComplete\HistoricalData\RealTime\2016-06-10\MS-EUR-OTHER-SYMBOL-AC-LIST.txt");
            // string strRealTimeOldPath = string.Format(@"D:\workfile\AutoComplete\QA\6-4\MS-CANADA-SYMBOL-AC-LIST.txt");
