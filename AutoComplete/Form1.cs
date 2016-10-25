@@ -45,11 +45,11 @@ namespace AutoComplete
         }
 
         #region 根据Key比对File并输出差异(输入的Key包括："rtSymbol", "Symbol", "rtExchangeId", "ExchangeId", "rtSecurityType", "SecurityType", "CountryId", "ShareClassId" )
-        public void compareFileByKey(string filepath1, string filepath2,string resultfile)
+        public void compareFileByKey(string filepath1, string filepath2, string resultfile, string[] keyArray, string[] ignoreArray)
         {
             //string[] keyArray = new string[] { "rtSymbol", "rtExchangeId", "rtSecurityType" };
-            string[] keyArray = new string[] { "rtSymbol", "Symbol", "rtExchangeId", "ExchangeId", "rtSecurityType", "SecurityType", "CountryId", "ShareClassId" };
-            string[] ignoreArray = new string[] { "RecordId", "MarketCapital", "AverageVolume", "NetAssets" };
+            keyArray = new string[] { "rtSymbol", "Symbol", "rtExchangeId", "ExchangeId", "rtSecurityType", "SecurityType", "CountryId", "ShareClassId" };
+            ignoreArray = new string[] { "RecordId", "MarketCapital", "AverageVolume", "NetAssets" };
             Dictionary<string, Dictionary<string, string>> AutoComplete_New = readFileByKey(filepath1, keyArray, ignoreArray);
             Dictionary<string, Dictionary<string, string>> AutoComplete_Old = readFileByKey(filepath2, keyArray, ignoreArray);
 
@@ -164,15 +164,14 @@ namespace AutoComplete
         #endregion
 
         #region 校验SecType变化
-        //如果存在预期文件，则多一个RT和预期比较的步骤
+        //以RT的SecType为准进行验证，再验证RT的变化是否合理
 
         #endregion 
 
 
-        #region  按照文件夹多线程比对(屏蔽global_fund_list.csv)
-        public void MultiThreadCompare(string filepath1, string filepath2)
+        #region  批量比对CSV文件夹(屏蔽global_fund_list.csv)
+        public void MultiThreadCompare(string filepath1, string filepath2, string resultfile, string[] keyArray, string[] ignoreArray)
         {
-            string resultfile = @"D:\workfile\AutoComplete\QA\10-22\22222.txt";
             List<string> filelist1 = new List<string>();
             List<string> filelist2 = new List<string>();
             filelist1 = FindFileByType(filepath1, "*.csv");
@@ -181,7 +180,7 @@ namespace AutoComplete
                 string temp = file.Substring(file.IndexOf(filepath1) + filepath1.Length, file.Length - filepath1.Length);
                 if (filelist2.Contains(filepath2 + temp) && temp != "global_fund_list.csv")
                 {
-                    compareFileByKey(filepath1 + temp, filepath2 + temp, resultfile);
+                    compareFileByKey(filepath1 + temp, filepath2 + temp, resultfile + temp.Split('.')[0] + "_Compare.txt", keyArray, ignoreArray);
                 }
             }
         }
@@ -212,27 +211,40 @@ namespace AutoComplete
         } 
         #endregion
 
-        private void button1_Click(object sender, EventArgs e)
+        private void btn_BatchCompare_Click(object sender, EventArgs e)
         {
-            //FindFileByType(@"D:\workfile\AutoComplete\QA\10-22\ACOld\","*.csv");
-            MultiThreadCompare(@"D:\workfile\AutoComplete\QA\10-22\ACNew\AutocompleteUniverse\", 
-@"D:\workfile\AutoComplete\QA\10-22\ACOld\AutocompleteUniverse\");
-            //compareFileByKey();
-            //Verify1022();
-           // string steRealTimeNewPath = string.Format(@"D:\workfile\AutoComplete\HistoricalData\RealTime\2016-06-10\MS-EUR-OTHER-SYMBOL-AC-LIST.txt");
-           // string strRealTimeOldPath = string.Format(@"D:\workfile\AutoComplete\QA\6-4\MS-CANADA-SYMBOL-AC-LIST.txt");
+            try
+            {
+                if (Directory.Exists(this.textBox1.Text) == false)
+                {
+                    MessageBox.Show(this.textBox1.Text + " Not Exist!");
+                    return;
+                }
+                if (Directory.Exists(this.textBox2.Text) == false)
+                {
+                    MessageBox.Show(this.textBox2.Text + " Not Exist!");
+                    return;
+                }
+                if (Directory.Exists(this.textBox3.Text) == false)
+                {
+                    MessageBox.Show(this.textBox3.Text + " Not Exist!");
+                    return;
+                }
+                if (this.textBox1.Text.Substring(this.textBox1.Text.Length - 1, 1) != "\\" || this.textBox2.Text.Substring(this.textBox2.Text.Length - 1, 1) != "\\" || this.textBox3.Text.Substring(this.textBox3.Text.Length - 1, 1) != "\\")
+                {
+                    MessageBox.Show("Folder should end with \"\\\"");
+                    return;
+                }
+                string[] keyArray = this.textBox4.Text.Split(',');
+                string[] ignoreArray = this.textBox5.Text.Split(',');
 
-           // string strAutoCompleteNewPath = string.Format(@"D:\workfile\AutoComplete\QA\6-4\log\global_index_list - Copy.csv");
-           // string strAutoCompleteOldPath = string.Format(@"D:\workfile\AutoComplete\HistoricalData\AutoComplete\2016-06-04\AutocompleteUniverse\199.csv");
+                MultiThreadCompare(this.textBox1.Text, this.textBox2.Text, this.textBox3.Text, keyArray, ignoreArray);
 
-           // //string Title = "";
-           // //string filePath1 = @"D:\workfile\Atlas\Alibaba_ETLTestFramwork_php\dumper.php";
-           // //Title = filePath1.Substring(filePath1.LastIndexOf("\\")+1, filePath1.Length - filePath1.LastIndexOf("\\")-1);
-           // //MessageBox.Show(Title);
-           // //SecurityChangeTest();
-           //// MessageBox.Show("Test Done\r\nPlease see log in D:\\workfile\\AutoComplete\\QA\\6-4\\log\\log.txt");
-           // CompareDataTable(@"D:\workfile\AutoComplete\HistoricalData\AutoComplete\2016-06-11-2\global_index_list.csv", @"D:\workfile\AutoComplete\HistoricalData\AutoComplete\2016-06-04\AutocompleteUniverse-New\AutocompleteUniverse\global_index_list.csv", "AutoComplete", true);
-           // //CompareDataTable(steRealTimeNewPath, strAutoCompleteOldPath, "AutoComplete", false);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }           
         }
 
         public static void Verify1022() {
@@ -1310,6 +1322,42 @@ namespace AutoComplete
 
         #endregion
 
-        
+        private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btn_CompareACAndRT_Click(object sender, EventArgs e)
+        {
+            if (Directory.Exists(this.textBox1.Text) == false)
+            {
+                MessageBox.Show(this.textBox1.Text + " Not Exist!");
+                return;
+            }
+            if (Directory.Exists(this.textBox2.Text) == false)
+            {
+                MessageBox.Show(this.textBox2.Text + " Not Exist!");
+                return;
+            }
+            if (Directory.Exists(this.textBox3.Text) == false)
+            {
+                MessageBox.Show(this.textBox3.Text + " Not Exist!");
+                return;
+            }
+            if (this.textBox1.Text.Substring(this.textBox1.Text.Length - 1, 1) != "\\" || this.textBox2.Text.Substring(this.textBox2.Text.Length - 1, 1) != "\\" || this.textBox3.Text.Substring(this.textBox3.Text.Length - 1, 1) != "\\")
+            {
+                MessageBox.Show("Folder should end with \"\\\"");
+                return;
+            }
+            string[] keyArray = this.textBox4.Text.Split(',');
+            string[] ignoreArray = this.textBox5.Text.Split(',');
+            compareFileByKey(this.textBox1.Text, this.textBox2.Text, this.textBox3.Text, keyArray, ignoreArray);
+        }
+
+        private void btn_CompareACAndRTSingleFile_Click(object sender, EventArgs e)
+        {
+
+        }
+       
     }
 }
