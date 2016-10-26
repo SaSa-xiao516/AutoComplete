@@ -11,6 +11,24 @@ namespace AutoComplete
 {
     class WebServiceCheck
     {
+        private string _hostName = "";
+        private string _userName = "";
+        private string _password = "";
+
+
+        public WebServiceCheck(string GIDOrEXOI) {
+            if (GIDOrEXOI.Trim().ToUpper().Equals("GID"))
+            {
+                _hostName = @"";
+                _userName = "GlobalEquityData@morningstar.com";
+                _password = "GXy1q88E";
+            }
+            else {
+                _hostName = @"";
+                _userName = "GlobalEquityData@morningstar.com";
+                _password = "GXy1q88E";
+            }
+        }
         String lastestPrice = "";
         //data members
         private static string _detailcookieHeader = null;
@@ -18,18 +36,33 @@ namespace AutoComplete
         private DateTime _lastDetailCookieTime;
         private int _cookieExpirationTime = 30 * 2 * 2;
         private int _timeoutInterval = 60000 * 60 * 2;//1 min
-        private string _login = "GlobalEquityData@morningstar.com";
-        private string _password = "GXy1q88E";
 
-        private string _loginDll = @"http://funddata.xoi.morningstar.com/XOISuite/login.aspx?token=CGC}I6hm5[8OE%BT";
-        private string _accessDll = @"http://funddata.xoi.morningstar.com/XOIAccess/login.aspx?";
-        private string _loginDllBeta = @"http://xoibeta.morningstar.com/XOISuite/login.aspx?token=CGC}I6hm5[8OE%BT";
-        private string _accessDllBeta = @"http://xoibeta.morningstar.com/XOIAccess/login.aspx?";
+        //private string _login = "GlobalEquityData@morningstar.com";
+        //private string _password = "GXy1q88E";
 
-        private string loginUrl = @"http://equitydata.morningstar.com/login/login.aspx?username=GlobalEquityData@morningstar.com&password=GXy1q88E";
+        private string _loginGID = @"";
+        private string _autoCompleteOutput = @"";
+
+        private string _loginEXOIUrl = @"http://equitydata.morningstar.com/login/login.aspx?username=GlobalEquityData@morningstar.com&password=GXy1q88E";
         private string _check90 = @"http://equitydata.xoi.morningstar.com/DataOutput.aspx?";
+
+        //private string _loginDll = @"http://funddata.xoi.morningstar.com/XOISuite/login.aspx?token=CGC}I6hm5[8OE%BT";
+        //private string _accessDll = @"http://funddata.xoi.morningstar.com/XOIAccess/login.aspx?";
+        //private string _loginDllBeta = @"http://xoibeta.morningstar.com/XOISuite/login.aspx?token=CGC}I6hm5[8OE%BT";
+        //private string _accessDllBeta = @"http://xoibeta.morningstar.com/XOIAccess/login.aspx?";
+
+
         private string url;
         private bool _bUserAuthentication = true;
+
+        #region 批量校验AutoComplete的Output {json-无需登录} 
+        #endregion
+
+        #region 返回GID的结果{Xml-需登录}
+        #endregion
+
+        #region 检查ShareClassOperation的LastTradingDate和现在是否超过90天-确认workday还是calendar {-需登录}
+        #endregion
 
         public void GetURL(string package, string Content, string ID, string IdType)
         {
@@ -48,7 +81,7 @@ namespace AutoComplete
         public void BatchCheck(){
             HttpWebRequest webRequest;
 
-            webRequest = (HttpWebRequest)WebRequest.Create(loginUrl);
+            webRequest = (HttpWebRequest)WebRequest.Create(_autoCompleteOutput);
             webRequest.CookieContainer = new CookieContainer();
             webRequest.AllowAutoRedirect = false;
 
@@ -58,13 +91,6 @@ namespace AutoComplete
             if (ch != null)
             {
                 _detailcookieHeader = webResponse.Headers.Get("Set-Cookie");
-
-            }
-            
-
-            try { }
-            catch (System.Exception httpEx) { 
-                //
             }
         }
 
