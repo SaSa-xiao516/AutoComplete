@@ -16,4 +16,13 @@ where Exchange = 223;
 -- hardcode
 select count(1) from raw_index_gid_data where RTExchangeId=223;
 
-select * from raw_index_gid_data where RTExchangeId=223
+select * from raw_index_gid_data where RTExchangeId=223 ;
+
+-- Output
+-- 4221
+select * from raw_universe_index_data where rtExchangeId=223;  -- 0
+-- 95769
+select * from raw_universe_solr_data where rtExchangeId=223 ;  -- 1429
+-- global_fund_lists.csv   286763
+select * from raw_fund_data ;
+
