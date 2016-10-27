@@ -17,7 +17,6 @@ namespace AutoComplete
     /// </summary>
     public abstract class DataUtil
     {
-        //fields & properties
 
         #region protected SqlConnection Connection
 

@@ -11,15 +11,21 @@ namespace AutoComplete
 {
     class WebServiceCheck
     {
+
+        private string URL;
         private string _hostName = "";
         private string _userName = "";
         private string _password = "";
+
+        public WebServiceCheck() { 
+
+        }
 
 
         public WebServiceCheck(string GIDOrEXOI) {
             if (GIDOrEXOI.Trim().ToUpper().Equals("GID"))
             {
-                _hostName = @"";
+                _hostName = @"http://globalid.morningstar.com/GIDDataIO/reg/login.aspx?";
                 _userName = "GlobalEquityData@morningstar.com";
                 _password = "GXy1q88E";
             }
@@ -29,53 +35,48 @@ namespace AutoComplete
                 _password = "GXy1q88E";
             }
         }
-        String lastestPrice = "";
-        //data members
+
         private static string _detailcookieHeader = null;
         private DateTime _lastCookieTime;
         private DateTime _lastDetailCookieTime;
         private int _cookieExpirationTime = 30 * 2 * 2;
-        private int _timeoutInterval = 60000 * 60 * 2;//1 min
-
-        //private string _login = "GlobalEquityData@morningstar.com";
-        //private string _password = "GXy1q88E";
-
-        private string _loginGID = @"";
-        private string _autoCompleteOutput = @"";
+        private static int _timeoutInterval = 60000 * 60 * 2;//1 min
 
         private string _loginEXOIUrl = @"http://equitydata.morningstar.com/login/login.aspx?username=GlobalEquityData@morningstar.com&password=GXy1q88E";
-        private string _check90 = @"http://equitydata.xoi.morningstar.com/DataOutput.aspx?";
-
-        //private string _loginDll = @"http://funddata.xoi.morningstar.com/XOISuite/login.aspx?token=CGC}I6hm5[8OE%BT";
-        //private string _accessDll = @"http://funddata.xoi.morningstar.com/XOIAccess/login.aspx?";
-        //private string _loginDllBeta = @"http://xoibeta.morningstar.com/XOISuite/login.aspx?token=CGC}I6hm5[8OE%BT";
-        //private string _accessDllBeta = @"http://xoibeta.morningstar.com/XOIAccess/login.aspx?";
-
-
-        private string url;
+        private static string _check90 = @"http://globalid.morningstar.com/GIDDataIO/feed/asmx/Axis.asmx/GetYAxisDataTable?outputDPs=-2,-3,-5,1,91,84,70,120,100,101,103,50,53,85,250,40,52,51&inputQueryString=D91=DNAI&IdType=InvestmentProductId&Content=Operation";
+        private static string _autoCompleteOutput = @"";
         private bool _bUserAuthentication = true;
 
         #region 批量校验AutoComplete的Output {json-无需登录} 
         #endregion
 
         #region 返回GID的结果{Xml-需登录}
+
         #endregion
 
         #region 检查ShareClassOperation的LastTradingDate和现在是否超过90天-确认workday还是calendar {-需登录}
         #endregion
 
+
+        #region 获取Cookie
+        public static void LoginGID() {
+            HttpWebRequest webRequest = null;
+            webRequest = (HttpWebRequest)WebRequest.Create(@"http://globalid.morningstar.com/GIDDataIO/reg/login.aspx?username=GlobalEquityData@morningstar.com&password=GXy1q88E");
+            webRequest.CookieContainer = new CookieContainer();
+            webRequest.AllowAutoRedirect = false;
+
+            HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
+            _detailcookieHeader = webResponse.Headers.Get("Set-Cookie");
+            //webResponse.Close();
+        }
+        #endregion
+
+        public static void test() {
+            isOver90(_check90);
+        }
+
         public void GetURL(string package, string Content, string ID, string IdType)
         {
-
-            StringBuilder URL = new StringBuilder(_check90);
-            URL.Append("Package=EquityData");
-            URL.Append("&Content=ShareClassInfo");
-            //URL.Append(Content);
-            URL.Append("&ID=");
-            URL.Append(ID);
-            URL.Append("&IdType=EquityShareClassId");
-            //URL.Append(IdType
-            url = URL.ToString();
         }
 
         public void BatchCheck(){
@@ -88,24 +89,21 @@ namespace AutoComplete
             HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
             string ch = webResponse.Headers.Get("Set-Cookie");
 
-            if (ch != null)
+            if (webResponse.StatusCode.Equals(HttpStatusCode.OK))
             {
                 _detailcookieHeader = webResponse.Headers.Get("Set-Cookie");
             }
         }
 
-        public bool isOver90(string link)
+        public static bool isOver90(string URL)
         {
+            HttpWebRequest webRequest = null;
+            HttpWebResponse webResponse = null;
             bool rtn = false;
-            GZipInputStream gStream = null;
-            Stream stream = null;
-            XmlDocument outdoc = new XmlDocument();
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(link);
+            XmlDocument outdoc = null;
             try
             {
-                // using basic authentication				 
-                //Authenticate();
-                webRequest = (HttpWebRequest)WebRequest.Create(link);
+                webRequest = (HttpWebRequest) WebRequest.Create(URL);
                 webRequest.Headers.Set("Accept-Language", "zh-cn\r\n");
                 webRequest.Headers.Set("Accept-Encoding", "gzip,deflate\r\n");
                 webRequest.Timeout = _timeoutInterval;
@@ -113,38 +111,28 @@ namespace AutoComplete
                 webRequest.CookieContainer = new CookieContainer();
                 webRequest.CookieContainer.SetCookies(webRequest.RequestUri, _detailcookieHeader);
 
-                HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
-
-
-                if (webResponse.StatusCode.Equals(HttpStatusCode.OK))
-                {
-                    string ch = webResponse.Headers.Get("Set-Cookie");
-                    if (ch != null)
+                webResponse = (HttpWebResponse) webRequest.GetResponse();
+                if (webResponse.StatusCode.Equals(HttpStatusCode.OK)) {
+                    outdoc = new XmlDocument();
+                    if (webResponse.ContentEncoding.Equals("gzip"))
                     {
-                        _detailcookieHeader = webResponse.Headers.Get("Set-Cookie");
-                        _lastDetailCookieTime = DateTime.Now;
-                    }
-
-                    if (webResponse.ContentType.Contains("gzip") || webResponse.ContentEncoding.Equals("gzip"))
-                    {
-                        gStream = new GZipInputStream(webResponse.GetResponseStream());
+                        var gStream = new GZipInputStream(webResponse.GetResponseStream());
                         outdoc.Load(gStream);
                     }
                     else
                     {
-                        stream = webResponse.GetResponseStream();
+                        var stream = webResponse.GetResponseStream();
+                        StringBuilder sb = new StringBuilder();
+                        using (StreamReader sr = new StreamReader(stream,Encoding.UTF8))
+                        {
+                            sb.Append(sr.ReadToEnd());
+                        }
+                        var bc = sb.ToString();
                         outdoc.Load(stream);
-
+                        var b = "";
                     }
                 }
-                else
-                {
-                    outdoc = null;
-                    //Tool.LogLog(DateTime.Today.ToString("yyyy-MM-dd"), "XOI Error: " + link + webResponse.StatusCode, DateTime.Now);
-                }
                 
-                webResponse.Close();
-                webRequest = null;
             }
             catch (WebException httpEx)
             {

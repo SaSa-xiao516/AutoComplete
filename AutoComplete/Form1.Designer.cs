@@ -131,7 +131,6 @@
             this.label1.Size = new System.Drawing.Size(43, 13);
             this.label1.TabIndex = 5;
             this.label1.Text = "FolderA";
-            this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
             // textBox5
             // 
@@ -200,7 +199,7 @@
             this.button4.TabIndex = 4;
             this.button4.Text = "VerifyACAsExpChange";
             this.button4.UseVisualStyleBackColor = true;
-            this.button4.Click += new System.EventHandler(this.button4_Click);
+            this.button4.Click += new System.EventHandler(this.VerifyACAsExpChange_Click);
             // 
             // groupBox2
             // 

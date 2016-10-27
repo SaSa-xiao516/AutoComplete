@@ -52,6 +52,7 @@
     <Compile Include="ACChange\AutoComplete.cs" />
     <Compile Include="ACChange\RealTime.cs" />
     <Compile Include="ACChange\SecurityTypeChange.cs" />
+    <Compile Include="AutoCompleteCheck.cs" />
     <Compile Include="Comm\Tool.cs" />
     <Compile Include="DataUtil.cs" />
     <Compile Include="AccessOutputDB.cs" />
