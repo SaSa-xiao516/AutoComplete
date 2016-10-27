@@ -54,7 +54,7 @@
             this.btn_BatchCompare.Name = "btn_BatchCompare";
             this.btn_BatchCompare.Size = new System.Drawing.Size(112, 38);
             this.btn_BatchCompare.TabIndex = 0;
-            this.btn_BatchCompare.Text = "BathCompare";
+            this.btn_BatchCompare.Text = "BathCompareAC";
             this.btn_BatchCompare.UseVisualStyleBackColor = true;
             this.btn_BatchCompare.Click += new System.EventHandler(this.btn_BatchCompare_Click);
             // 
@@ -200,21 +200,22 @@
             this.button4.TabIndex = 4;
             this.button4.Text = "VerifyACAsExpChange";
             this.button4.UseVisualStyleBackColor = true;
+            this.button4.Click += new System.EventHandler(this.button4_Click);
             // 
             // groupBox2
             // 
             this.groupBox2.Location = new System.Drawing.Point(12, 349);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(546, 99);
+            this.groupBox2.Size = new System.Drawing.Size(546, 154);
             this.groupBox2.TabIndex = 5;
             this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "groupBox2";
+            this.groupBox2.Text = "CompareACandRT";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(570, 462);
+            this.ClientSize = new System.Drawing.Size(570, 559);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.button4);
             this.Controls.Add(this.button3);

@@ -215,6 +215,7 @@ namespace AutoComplete
         {
             try
             {
+                //不支持压缩包
                 if (Directory.Exists(this.textBox1.Text) == false)
                 {
                     MessageBox.Show(this.textBox1.Text + " Not Exist!");
@@ -314,7 +315,6 @@ namespace AutoComplete
                 {
                     Tool.LogFile(Failure, raw.Key);
                 }
-
             }
             #endregion
 
@@ -1356,7 +1356,19 @@ namespace AutoComplete
 
         private void btn_CompareACAndRTSingleFile_Click(object sender, EventArgs e)
         {
+            //仅仅比对Symbol，SecurityType，ExchangeId
+            //输入：要比对的AC文件 + RT文件
 
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            AccessOutputDB a = new AccessOutputDB();  //LastTradingDate
+            DataSet ds = a.getEquityXOICurrentShareClassInfo("0P000002RH");
+            DataTable dt = ds.Tables[0];
+            DateTime nowDate = DateTime.Now;
+            DateTime lastTradingDate = DateTime.Parse(dt.Rows[0]["LastTradingDate"].ToString());
+            MessageBox.Show((nowDate - lastTradingDate).TotalDays.ToString());
         }
        
     }

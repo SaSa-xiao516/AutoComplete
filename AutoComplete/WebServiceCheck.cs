@@ -140,7 +140,7 @@ namespace AutoComplete
                 else
                 {
                     outdoc = null;
-                    //Log.ErrorLog(DateTime.Today.ToString("yyyy-MM-dd"), "XOI Error: " + link + webResponse.StatusCode, DateTime.Now);
+                    //Tool.LogLog(DateTime.Today.ToString("yyyy-MM-dd"), "XOI Error: " + link + webResponse.StatusCode, DateTime.Now);
                 }
                 
                 webResponse.Close();
@@ -161,7 +161,7 @@ namespace AutoComplete
                 //    return new XoiDocument(null, link) { StatusCode = httpEx2.HResult };
                 //return GetDetailXml(link, tryTime);
                 //outdoc = null;
-                //Log.ErrorLog(DateTime.Today.ToString("yyyy-MM-dd"), "XOI Error: " + link + httpEx.Message, DateTime.Now);
+                //Tool.LogLog(DateTime.Today.ToString("yyyy-MM-dd"), "XOI Error: " + link + httpEx.Message, DateTime.Now);
             }
             
             return rtn;
